@@ -11,8 +11,13 @@ struct FunctionContextData {
     pub table_name: String,
 }
 
-pub async fn handler(mut _ctx: Context, _input: Value) -> Result<Value, Error> {
-    let mut item_data = to_item(_input)?;
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FunctionInput {
+    pub data: Value,
+}
+
+pub async fn handler(mut _ctx: Context, _input: FunctionInput) -> Result<Value, Error> {
+    let mut item_data = to_item(_input.data)?;
     let function_id = Uuid::new_v4().to_string();
     let config = aws_config::from_env().region("ap-south-1").load().await;
 
@@ -51,7 +56,6 @@ mod tests {
 
     #[tokio::test]
     async fn trigger_function() {
-
         let resp = handler(
             Context::new(
                 "test".to_string(),
@@ -61,17 +65,19 @@ mod tests {
                 }),
                 json!({}),
             ),
-            json!({
-                "name": "create_function",
-                "label": "Create Function",
-                "description": "This function can be used to create a function in database",
-                "language": "rust",
-                "input_schema": {},
-                "logo_url": "https://egnitely.com/egnitely.png",
-                "repository": "https://github.com/egnitely/egnitely-functions",
-                "branch": "main",
-                "repo_sub_directory": "create_function",
-            }),
+            FunctionInput {
+                data: json!({
+                    "name": "create_function",
+                    "label": "Create Function",
+                    "description": "This function can be used to create a function in database",
+                    "language": "rust",
+                    "input_schema": {},
+                    "logo_url": "https://egnitely.com/egnitely.png",
+                    "repository": "https://github.com/egnitely/egnitely-functions",
+                    "branch": "main",
+                    "repo_sub_directory": "create_function",
+                }),
+            },
         )
         .await
         .unwrap();
